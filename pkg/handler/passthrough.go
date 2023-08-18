@@ -6,7 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/kodylow/matador/pkg/auth"
 	models "github.com/kodylow/matador/pkg/models"
@@ -65,10 +65,25 @@ func PassthroughHandler(w http.ResponseWriter, r *http.Request) {
 		Body:       body,
 	}
 
+	var requestBody struct {
+        Quantity int `json:"quantity"`
+    }
+    err = json.Unmarshal(body, &requestBody)
+    if err != nil {
+        log.Println("Error parsing JSON body:", err)
+    }
+
 	err = auth.CheckAuthorizationHeader(reqInfo)
 	if err != nil {
-		log.Println("Unauthorized, payment required")
-		l402, err := auth.GetL402(reqInfo)
+
+		queryQuantity := requestBody.Quantity
+	    if queryQuantity <= 0 {
+	        queryQuantity = 1 // Default value
+	    }
+	    log.Println("Unauthorized, payment required")
+		log.Println("queryQuantity requested:",queryQuantity)
+		log.Println("requestBody:", requestBody)
+		l402, err := auth.GetL402(reqInfo,queryQuantity)
 		if err != nil {
 			log.Println("Error getting L402:", err)
 			w.WriteHeader(http.StatusInternalServerError)

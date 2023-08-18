@@ -78,15 +78,18 @@ func CheckAuthorizationHeader(reqInfo models.RequestInfo) error {
 	return nil
 }
 
-// GetL402 returns the L402 authentication header for the given request
-func GetL402(reqInfo models.RequestInfo) (string, error) {
+func GetL402(reqInfo models.RequestInfo, queryQuantity int) (string, error) {
 	// If not authorized, get msats cost for hitting this specific endpoint
 	msats, err := service.MatchRequestMethodPath(reqInfo)
 	if err != nil {
 		log.Println("Error matching request method and path for pricing:", err)
 		return "", err
 	}
-	invoice,verifyURL, err := service.GetInvoice(msats)
+
+	// Multiply msats by queryQuantity
+	msats *= uint64(queryQuantity)
+
+	invoice, verifyURL, err := service.GetInvoice(msats)
 	if err != nil {
 		log.Println("Error getting invoice:", err)
 		return "", err
@@ -114,6 +117,8 @@ func GetL402(reqInfo models.RequestInfo) (string, error) {
 		return "", err
 	}
 
-	l402 := fmt.Sprintf("L402 token=\"%s\", invoice=\"%s\",verifyURL=\"%s\"", token, invoice,verifyURL)
+	l402 := fmt.Sprintf("L402 token=\"%s\", invoice=\"%s\",verifyURL=\"%s\"", token, invoice, verifyURL)
 	return l402, nil
 }
+
+
